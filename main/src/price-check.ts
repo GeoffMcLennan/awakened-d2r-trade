@@ -1,7 +1,7 @@
 import { Rectangle, Point, screen } from 'electron'
 import { uIOhook } from 'uiohook-napi'
 import { isPollingClipboard } from './poll-clipboard'
-import { PoeWindow } from './PoeWindow'
+import { D2RWindow } from './D2RWindow'
 import { config } from './config'
 import { logger } from './logger'
 import { isInteractable, assertOverlayActive, assertPoEActive, DPR, overlayOnEvent, overlaySendEvent } from './overlay-window'
@@ -32,7 +32,7 @@ export function showWidget (opts: {
     payload: { clipboard: opts.clipboard, position: opts.pressPosition, lockedMode: isLokedMode }
   })
 
-  const poeBounds = PoeWindow.bounds
+  const poeBounds = D2RWindow.bounds
   activeAreaRect = {
     x: getOffsetX(checkPressPosition, poeBounds),
     y: poeBounds.y,
@@ -130,10 +130,10 @@ function isPointInsideRect (point: Point, rect: Rectangle) {
 function getOffsetX (mousePos: Point, poePos: Rectangle): number {
   if (mousePos.x > (poePos.x + poePos.width / 2)) {
     // inventory
-    return (poePos.x + poePos.width) - PoeWindow.uiSidebarWidth - Math.floor(WIDTH_96DPI * DPR * config.get('fontSize'))
+    return (poePos.x + poePos.width) - D2RWindow.uiSidebarWidth - Math.floor(WIDTH_96DPI * DPR * config.get('fontSize'))
   } else {
     // stash or chat
-    return poePos.x + PoeWindow.uiSidebarWidth
+    return poePos.x + D2RWindow.uiSidebarWidth
   }
 }
 

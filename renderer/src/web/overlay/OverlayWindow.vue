@@ -24,7 +24,7 @@ import { defineComponent, provide, shallowRef, watch, readonly, computed, onMoun
 import { MainProcess } from '@/web/background/IPC'
 import { Widget, WidgetManager } from './interfaces'
 import WidgetTimer from './WidgetTimer.vue'
-import WidgetStashSearch from './WidgetStashSearch.vue'
+// import WidgetStashSearch from './WidgetStashSearch.vue'
 import WidgetMenu from './WidgetMenu.vue'
 import PriceCheckWindow from '@/web/price-check/PriceCheckWindow.vue'
 import WidgetDebug from './WidgetDebug.vue'
@@ -46,7 +46,7 @@ type WMID = Widget['wmId']
 export default defineComponent({
   components: {
     WidgetTimer,
-    WidgetStashSearch,
+    // WidgetStashSearch,
     WidgetMenu,
     WidgetPriceCheck: PriceCheckWindow,
     WidgetDebug,

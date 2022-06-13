@@ -5,14 +5,14 @@ import { pollClipboard } from './poll-clipboard'
 import { priceCheckConfig, showWidget as showPriceCheck } from './price-check'
 import { isModKey, KeyToElectron, mergeTwoHotkeys } from '../../ipc/KeyToCode'
 import { config } from './config'
-import { PoeWindow } from './PoeWindow'
+import { D2RWindow } from './D2RWindow'
 import { logger } from './logger'
 import { toggleOverlayState, assertOverlayActive, assertPoEActive, overlayOnEvent, overlaySendEvent } from './overlay-window'
 import type * as ipc from '../../ipc/ipc-event'
 import type * as widget from '../../ipc/widgets'
-import { typeInChat } from './game-chat'
 import { gameConfig } from './game-config'
 import { restoreClipboard } from './clipboard-saver'
+import { attemptToParseScreenShot } from './screenshot-parser'
 
 export const UiohookToName = Object.fromEntries(Object.entries(UiohookKey).map(([k, v]) => ([v, k])))
 
@@ -190,47 +190,47 @@ function shortcutsFromConfig () {
 function registerGlobal () {
   const toRegister = shortcutsFromConfig()
   for (const entry of toRegister) {
-    const isOk = globalShortcut.register(shortcutToElectron(entry.shortcut), () => {
-      if (entry.keepModKeys) {
-        const nonModKey = entry.shortcut.split(' + ').filter(key => !isModKey(key))[0]
-        robotjs.keyToggle(nonModKey, 'up')
-      } else {
-        entry.shortcut.split(' + ').reverse().forEach(key => { robotjs.keyToggle(key, 'up') })
-      }
+    const isOk = globalShortcut.register(shortcutToElectron(entry.shortcut), async () => {
+      // if (entry.keepModKeys) {
+      //   const nonModKey = entry.shortcut.split(' + ').filter(key => !isModKey(key))[0]
+      //   robotjs.keyToggle(nonModKey, 'up')
+      // } else {
+      //   entry.shortcut.split(' + ').reverse().forEach(key => { robotjs.keyToggle(key, 'up') })
+      // }
 
       if (entry.action.type === 'toggle-overlay') {
         toggleOverlayState()
-      } else if (entry.action.type === 'paste-in-chat') {
-        typeInChat(entry.action.text, entry.action.send)
       } else if (entry.action.type === 'trigger-event') {
         overlaySendEvent({ name: entry.action.eventName, payload: entry.action.payload } as ipc.IpcEvent)
-      } else if (entry.action.type === 'stash-search') {
-        stashSearch(entry.action.text)
       } else if (entry.action.type === 'copy-item') {
-        const { action } = entry
 
-        const pressPosition = screen.getCursorScreenPoint()
+        logger.debug(JSON.stringify(entry))
+        const pressPosition = screen.getCursorScreenPoint();
+        const item = await attemptToParseScreenShot(pressPosition);
+        // const { action } = entry
 
-        pollClipboard()
-          .then(clipboard => {
-            if (action.eventName === 'price-check-quick' || action.eventName === 'price-check-locked') {
-              showPriceCheck({ clipboard, pressPosition, eventName: action.eventName })
-            } else {
-              overlaySendEvent({
-                name: action.eventName,
-                payload: { clipboard, position: pressPosition }
-              })
-              if (action.focusOverlay) {
-                assertOverlayActive()
-              }
-            }
-          }).catch(() => {})
+        // const pressPosition = screen.getCursorScreenPoint()
 
-        if (!entry.keepModKeys) {
-          pressKeysToCopyItemText()
-        } else {
-          pressKeysToCopyItemText(entry.shortcut.split(' + ').filter(key => isModKey(key)))
-        }
+        // pollClipboard()
+        //   .then(clipboard => {
+        //     if (action.eventName === 'price-check-quick' || action.eventName === 'price-check-locked') {
+        //       showPriceCheck({ clipboard, pressPosition, eventName: action.eventName })
+        //     } else {
+        //       overlaySendEvent({
+        //         name: action.eventName,
+        //         payload: { clipboard, position: pressPosition }
+        //       })
+        //       if (action.focusOverlay) {
+        //         assertOverlayActive()
+        //       }
+        //     }
+        //   }).catch(() => {})
+
+        // if (!entry.keepModKeys) {
+        //   pressKeysToCopyItemText()
+        // } else {
+        //   pressKeysToCopyItemText(entry.shortcut.split(' + ').filter(key => isModKey(key)))
+        // }
       }
     })
 
@@ -251,35 +251,35 @@ function unregisterGlobal () {
   logger.verbose('Unregistered Global', { source: 'shortcuts' })
 }
 
-function pressKeysToCopyItemText (pressedModKeys: string[] = []) {
-  let keys = mergeTwoHotkeys('Ctrl + C', gameConfig?.highlightKey || 'Alt').split(' + ')
-  keys = keys.filter(key => key !== 'C' && !pressedModKeys.includes(key))
+// function pressKeysToCopyItemText (pressedModKeys: string[] = []) {
+//   let keys = mergeTwoHotkeys('Ctrl + C', gameConfig?.highlightKey || 'Alt').split(' + ')
+//   keys = keys.filter(key => key !== 'C' && !pressedModKeys.includes(key))
 
-  for (const key of keys) {
-    robotjs.keyToggle(key, 'down')
-  }
+//   for (const key of keys) {
+//     robotjs.keyToggle(key, 'down')
+//   }
 
-  // finally press `C` to copy text
-  robotjs.keyTap('C')
+//   // finally press `C` to copy text
+//   robotjs.keyTap('C')
 
-  keys.reverse()
-  for (const key of keys) {
-    robotjs.keyToggle(key, 'up')
-  }
-}
+//   keys.reverse()
+//   for (const key of keys) {
+//     robotjs.keyToggle(key, 'up')
+//   }
+// }
 
 export function setupShortcuts () {
   // A value of zero causes the thread to relinquish the remainder of its
   // time slice to any other thread that is ready to run. If there are no other
   // threads ready to run, the function returns immediately
-  robotjs.setKeyboardDelay(0)
+  // robotjs.setKeyboardDelay(0)
 
-  if (PoeWindow.isActive) {
+  if (D2RWindow.isActive) {
     registerGlobal()
   }
-  PoeWindow.on('active-change', (isActive) => {
+  D2RWindow.on('active-change', (isActive) => {
     process.nextTick(() => {
-      if (isActive === PoeWindow.isActive) {
+      if (isActive === D2RWindow.isActive) {
         if (isActive) {
           registerGlobal()
         } else {
@@ -289,7 +289,7 @@ export function setupShortcuts () {
     })
   })
 
-  overlayOnEvent('OVERLAY->MAIN::stash-search', (_, { text }) => { stashSearch(text) })
+  // overlayOnEvent('OVERLAY->MAIN::stash-search', (_, { text }) => { stashSearch(text) })
 
   uIOhook.on('keydown', (e) => {
     const pressed = eventToString(e)
@@ -301,13 +301,13 @@ export function setupShortcuts () {
   })
 
   uIOhook.on('wheel', (e) => {
-    if (!e.ctrlKey || !PoeWindow.bounds || !PoeWindow.isActive || !config.get('stashScroll')) return
+    if (!e.ctrlKey || !D2RWindow.bounds || !D2RWindow.isActive || !config.get('stashScroll')) return
 
     if (!isGameScrolling(e)) {
       if (e.rotation > 0) {
-        robotjs.keyTap('ArrowRight')
+        // robotjs.keyTap('ArrowRight')
       } else if (e.rotation < 0) {
-        robotjs.keyTap('ArrowLeft')
+        // robotjs.keyTap('ArrowLeft')
       }
     }
   })
@@ -316,22 +316,22 @@ export function setupShortcuts () {
 }
 
 function isGameScrolling (mouse: UiohookWheelEvent): boolean {
-  if (!PoeWindow.bounds ||
-      mouse.x > (PoeWindow.bounds.x + PoeWindow.uiSidebarWidth)) return false
+  if (!D2RWindow.bounds ||
+      mouse.x > (D2RWindow.bounds.x + D2RWindow.uiSidebarWidth)) return false
 
-  return (mouse.y > (PoeWindow.bounds.y + PoeWindow.bounds.height * 154 / 1600) &&
-          mouse.y < (PoeWindow.bounds.y + PoeWindow.bounds.height * 1192 / 1600))
+  return (mouse.y > (D2RWindow.bounds.y + D2RWindow.bounds.height * 154 / 1600) &&
+          mouse.y < (D2RWindow.bounds.y + D2RWindow.bounds.height * 1192 / 1600))
 }
 
-function stashSearch (text: string) {
-  restoreClipboard((clipboard) => {
-    assertPoEActive()
-    clipboard.writeText(text)
-    robotjs.keyTap('F', ['Ctrl'])
-    robotjs.keyTap('V', ['Ctrl'])
-    robotjs.keyTap('Enter')
-  })
-}
+// function stashSearch (text: string) {
+//   restoreClipboard((clipboard) => {
+//     assertPoEActive()
+//     clipboard.writeText(text)
+//     robotjs.keyTap('F', ['Ctrl'])
+//     robotjs.keyTap('V', ['Ctrl'])
+//     robotjs.keyTap('Enter')
+//   })
+// }
 
 function eventToString (e: { keycode: number, ctrlKey: boolean, altKey: boolean, shiftKey: boolean }) {
   const { ctrlKey, shiftKey, altKey } = e

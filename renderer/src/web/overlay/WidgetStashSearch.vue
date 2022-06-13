@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <widget :config="config" move-handles="corners" :inline-edit="false">
     <div class="widget-default-style p-1" style="min-width: 5rem;">
       <div class="text-gray-100 m-1 leading-4 truncate">{{ config.wmTitle || 'Untitled' }}</div>
@@ -54,4 +54,4 @@ export default defineComponent({
     }
   }
 })
-</script>
+</script> -->

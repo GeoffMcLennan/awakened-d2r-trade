@@ -77,7 +77,7 @@ export const defaultConfig = (): Config => ({
   }],
   clientLog: null,
   gameConfig: null,
-  windowTitle: 'Path of Exile',
+  windowTitle: 'Diablo II: Resurrected',
   logLevel: 'warn',
   hardwareAcceleration: false,
   accountName: '',

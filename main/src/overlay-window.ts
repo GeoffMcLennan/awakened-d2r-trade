@@ -1,7 +1,7 @@
 import path from 'path'
 import assert from 'assert'
 import { BrowserWindow, ipcMain, dialog, shell, Menu, systemPreferences, IpcMainEvent, WebContents } from 'electron'
-import { PoeWindow } from './PoeWindow'
+import { D2RWindow } from './D2RWindow'
 import { logger } from './logger'
 import * as ipc from '../../ipc/ipc-event'
 import { OverlayWindow as OW } from 'electron-overlay-window'
@@ -41,8 +41,8 @@ export async function createOverlayWindow () {
   overlayOnEvent('OVERLAY->MAIN::ready', _resolveOverlayReady)
   overlayOnEvent('OVERLAY->MAIN::devicePixelRatio-change', (_, dpr) => handleDprChange(dpr))
   overlayOnEvent('OVERLAY->MAIN::close-overlay', assertPoEActive)
-  PoeWindow.on('active-change', handlePoeWindowActiveChange)
-  PoeWindow.onAttach(handleOverlayAttached)
+  D2RWindow.on('active-change', handlePoeWindowActiveChange)
+  D2RWindow.onAttach(handleOverlayAttached)
 
   overlayWindow = new BrowserWindow({
     icon: path.join(__dirname, process.env.STATIC!, 'icon.png'),
@@ -84,7 +84,7 @@ export async function createOverlayWindow () {
     overlayWindow!.once('ready-to-show', resolve))
   await electronReadyToShow
   await overlayReady
-  PoeWindow.attach(overlayWindow)
+  D2RWindow.attach(overlayWindow)
 }
 
 let _isOverlayKeyUsed = false
@@ -134,7 +134,7 @@ function focusOverlay () {
 
   isInteractable = true
   OW.activateOverlay()
-  PoeWindow.isActive = false
+  D2RWindow.isActive = false
 }
 
 function focusPoE () {
@@ -142,7 +142,7 @@ function focusPoE () {
 
   isInteractable = false
   OW.focusTarget()
-  PoeWindow.isActive = true
+  D2RWindow.isActive = true
 }
 
 function handleOverlayAttached (hasAccess?: boolean) {
